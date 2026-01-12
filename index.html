@@ -101,7 +101,9 @@
 
             const saveData = (newData) => {
                 setWorkoutData(newData);
+                // This line physically writes the data to your phone's disk
                 localStorage.setItem(`workout-${currentProfile}-v3`, JSON.stringify(newData));
+                console.log("Data committed to LocalStorage");
             };
 
             const addLog = (day, exIdx) => {

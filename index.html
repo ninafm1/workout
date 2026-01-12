@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Workout Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            -webkit-tap-highlight-color: transparent; 
+            touch-action: manipulation;
+            background-color: #f9fafb;
+            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        input[type="number"], input[type="text"] {
+            font-size: 16px !important; 
+        }
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const Plus = () => (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        );
+
+        const WorkoutApp = () => {
+            const [activeTab, setActiveTab] = useState('dayA');
+            const [currentProfile, setCurrentProfile] = useState('Nina');
+            const [workoutData, setWorkoutData] = useState({});
+            const [currentWeek, setCurrentWeek] = useState(1);
+
+            const workoutStructure = {
+                dayA: {
+                    name: "Day A: Lower Body Glute Focus",
+                    exercises: [
+                        { name: "Barbell Hip Thrust", sets: 4, reps: "10-12", startWeight: 95, rest: 90, acl: "✓ Safe", notes: "⭐ PRIMARY - Squeeze glutes at top, pause 1 sec" },
+                        { name: "Back Squat (Low Bar, ATG)", sets: 4, reps: "8-10", startWeight: 115, rest: 90, acl: "⚠️ Control descent", notes: "Go deep - KEEP KNEES TRACKING OVER TOES" },
+                        { name: "Bulgarian Split Squat", sets: 3, reps: "10-12/leg", startWeight: 25, rest: 60, acl: "⚠️ Avoid valgus", notes: "Deep stretch, drive through front heel" },
+                        { name: "Hamstring Curl", sets: 3, reps: "12-15", startWeight: 45, rest: 45, acl: "✓ Safe", notes: "Control eccentric, squeeze at top" },
+                        { name: "Copenhagen Plank", sets: 3, reps: "15-20s", startWeight: 0, rest: 45, acl: "✓ Safe", notes: "Adductor strength - helps ACL stability" },
+                        { name: "Hip Abduction Machine", sets: 3, reps: "15-20", startWeight: 50, rest: 45, acl: "✓ Safe", notes: "Slow controlled movement" },
+                        { name: "Incline Treadmill 12-3-30", sets: 1, reps: "30 min", startWeight: 0, rest: 0, acl: "✓ Safe", notes: "12% incline, 3mph - Great for glutes!" }
+                    ]
+                },
+                dayB: {
+                    name: "Day B: Power + Upper Body",
+                    exercises: [
+                        { name: "Box Step-Ups w/ Knee Drive", sets: 4, reps: "10-12/leg", startWeight: 20, rest: 90, acl: "✓ Safe", notes: "Explosive drive, land softly" },
+                        { name: "DB Bench Press", sets: 4, reps: "10-12", startWeight: 20, rest: 90, acl: "✓ Safe", notes: "Control down to chest" },
+                        { name: "Lat Pulldown (Wide Grip)", sets: 3, reps: "10-12", startWeight: 70, rest: 60, acl: "✓ Safe", notes: "Pull to upper chest" },
+                        { name: "Seated DB Shoulder Press", sets: 3, reps: "10-12", startWeight: 15, rest: 60, acl: "✓ Safe", notes: "Press overhead, control descent" },
+                        { name: "Cable Chest Fly", sets: 3, reps: "12-15", startWeight: 15, rest: 45, acl: "✓ Safe", notes: "Squeeze chest at center" },
+                        { name: "Cable Tricep Pushdown", sets: 3, reps: "12-15", startWeight: 30, rest: 45, acl: "✓ Safe", notes: "Rope attachment, keep elbows tucked" },
+                        { name: "Cable Bicep Curl", sets: 3, reps: "12-15", startWeight: 30, rest: 45, acl: "✓ Safe", notes: "Control eccentric" },
+                        { name: "Walking Lunges", sets: 3, reps: "10/leg", startWeight: 15, rest: 60, acl: "⚠️ Control", notes: "Keep torso upright" },
+                        { name: "Glute Bridge (Burnout)", sets: 2, reps: "20", startWeight: 0, rest: 45, acl: "✓ Safe", notes: "Squeeze hard at top" },
+                        { name: "Stairmaster HIIT", sets: 1, reps: "20 min", startWeight: 0, rest: 0, acl: "✓ Safe", notes: "1min hard / 1min easy" }
+                    ]
+                },
+                dayC: {
+                    name: "Day C: Glute Hypertrophy + Metabolic",
+                    exercises: [
+                        { name: "Romanian Deadlift", sets: 4, reps: "10-12", startWeight: 85, rest: 90, acl: "✓ Safe", notes: "Push hips back, squeeze glutes up" },
+                        { name: "Single-Leg Glute Bridge", sets: 3, reps: "12-15/leg", startWeight: 0, rest: 60, acl: "✓ Safe", notes: "Full ROM, squeeze hard at top" },
+                        { name: "Leg Press (Feet High)", sets: 3, reps: "12-15", startWeight: 135, rest: 60, acl: "⚠️ Control", notes: "DON'T let knees cave in" },
+                        { name: "Cable Pull-Through", sets: 3, reps: "15", startWeight: 40, rest: 45, acl: "✓ Safe", notes: "Hip hinge, squeeze glutes at lockout" },
+                        { name: "Lateral Band Walks", sets: 3, reps: "20 steps", startWeight: 0, rest: 45, acl: "✓ Safe", notes: "Medium band around knees" },
+                        { name: "Seated Cable Row", sets: 3, reps: "12-15", startWeight: 70, rest: 60, acl: "✓ Safe", notes: "Squeeze shoulder blades" },
+                        { name: "DB Incline Press", sets: 3, reps: "10-12", startWeight: 20, rest: 60, acl: "✓ Safe", notes: "45° bench angle" },
+                        { name: "Cable Lateral Raise", sets: 3, reps: "12-15", startWeight: 10, rest: 45, acl: "✓ Safe", notes: "Slight forward lean" },
+                        { name: "Face Pulls", sets: 3, reps: "15-20", startWeight: 40, rest: 45, acl: "✓ Safe", notes: "Pull to face, external rotation" },
+                        { name: "BOSU Ball Plank", sets: 3, reps: "45s", startWeight: 0, rest: 45, acl: "✓ Safe", notes: "Core stability challenge" },
+                        { name: "Cable Woodchops", sets: 3, reps: "12/side", startWeight: 30, rest: 45, acl: "✓ Safe", notes: "High to low rotation" }
+                    ]
+                }
+            };
+
+            useEffect(() => {
+                const saved = localStorage.getItem(`workout-${currentProfile}-v3`);
+                if (saved) setWorkoutData(JSON.parse(saved));
+                else setWorkoutData({});
+            }, [currentProfile]);
+
+            const saveData = (newData) => {
+                setWorkoutData(newData);
+                localStorage.setItem(`workout-${currentProfile}-v3`, JSON.stringify(newData));
+            };
+
+            const addLog = (day, exIdx) => {
+                const key = `${day}-${exIdx}-w${currentWeek}`;
+                const newData = { ...workoutData };
+                if (!newData[key]) newData[key] = [];
+                const ex = workoutStructure[day].exercises[exIdx];
+                newData[key].push({ weight: ex.startWeight || '', reps: '', date: new Date().toLocaleDateString() });
+                saveData(newData);
+            };
+
+            const updateLog = (key, logIdx, field, value) => {
+                const newData = { ...workoutData };
+                newData[key][logIdx][field] = value;
+                saveData(newData);
+            };
+
+            const deleteLog = (key, logIdx) => {
+                const newData = { ...workoutData };
+                newData[key].splice(logIdx, 1);
+                saveData(newData);
+            };
+
+            const renderExercise = (ex, idx) => {
+                const key = `${activeTab}-${idx}-w${currentWeek}`;
+                const logs = workoutData[key] || [];
+                const isCaution = ex.acl.includes('⚠️');
+
+                return (
+                    <div key={idx} className={`mb-4 p-4 rounded-2xl border-2 bg-white shadow-sm ${isCaution ? 'border-yellow-200' : 'border-gray-100'}`}>
+                        <div className="flex justify-between items-start mb-2">
+                            <div className="pr-2">
+                                <h3 className="font-bold text-gray-800 leading-tight">{ex.name}</h3>
+                                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mt-1">
+                                    {ex.sets} Sets × {ex.reps} • <span className={isCaution ? 'text-yellow-600' : 'text-green-600'}>{ex.acl}</span>
+                                </p>
+                            </div>
+                            <button onClick={() => addLog(activeTab, idx)} className="bg-pink-500 text-white p-3 rounded-xl shadow-lg active:scale-90 transition-all">
+                                <Plus />
+                            </button>
+                        </div>
+                        
+                        {logs.map((log, lIdx) => (
+                            <div key={lIdx} className="flex gap-2 mt-2 items-center">
+                                <div className="relative flex-1">
+                                    <input 
+                                        type="number" 
+                                        placeholder="lbs" 
+                                        value={log.weight}
+                                        onChange={(e) => updateLog(key, lIdx, 'weight', e.target.value)}
+                                        className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-pink-300 outline-none text-center font-bold"
+                                    />
+                                    <span className="absolute right-2 top-3 text-[10px] text-gray-300 font-bold uppercase">lbs</span>
+                                </div>
+                                <div className="relative flex-1">
+                                    <input 
+                                        type="number" 
+                                        placeholder="reps" 
+                                        value={log.reps}
+                                        onChange={(e) => updateLog(key, lIdx, 'reps', e.target.value)}
+                                        className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-pink-300 outline-none text-center font-bold"
+                                    />
+                                    <span className="absolute right-2 top-3 text-[10px] text-gray-300 font-bold uppercase">reps</span>
+                                </div>
+                                <button 
+                                    onClick={() => deleteLog(key, lIdx)}
+                                    className="p-3 text-red-300 font-bold active:text-red-500"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        ))}
+                        <p className="text-[11px] mt-3 text-gray-500 italic bg-gray-50 p-2 rounded-lg border border-gray-100">
+                           💡 {ex.notes}
+                        </p>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen pb-32">
+                    <div className="sticky-header">
+                        <header className="px-6 py-4 flex justify-between items-center">
+                            <h1 className="text-xl font-black text-gray-800 tracking-tighter uppercase italic">GymLog v3</h1>
+                            <div className="flex bg-gray-100 p-1 rounded-xl">
+                                {['Nina', 'Sydney'].map(p => (
+                                    <button 
+                                        key={p}
+                                        onClick={() => setCurrentProfile(p)}
+                                        className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${currentProfile === p ? 'bg-white shadow text-pink-500' : 'text-gray-400'}`}
+                                    >
+                                        {p.toUpperCase()}
+                                    </button>
+                                ))}
+                            </div>
+                        </header>
+
+                        <div className="px-6 pb-4 flex items-center justify-between">
+                             <div className="flex items-center gap-2">
+                                <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Phase:</span>
+                                <select 
+                                    value={currentWeek} 
+                                    onChange={(e) => setCurrentWeek(e.target.value)}
+                                    className="bg-pink-50 px-3 py-1 rounded-lg font-bold text-pink-600 outline-none border border-pink-100"
+                                >
+                                    {[...Array(12)].map((_, i) => <option key={i+1} value={i+1}>Week {i+1}</option>)}
+                                </select>
+                             </div>
+                             <div className="text-[10px] font-bold text-green-500 uppercase tracking-widest bg-green-50 px-2 py-1 rounded border border-green-100">
+                                📱 Local Cloud Active
+                             </div>
+                        </div>
+
+                        <nav className="flex text-center border-t">
+                            {['dayA', 'dayB', 'dayC', 'food'].map(t => (
+                                <button 
+                                    key={t}
+                                    onClick={() => setActiveTab(t)}
+                                    className={`flex-1 py-4 text-[10px] font-black tracking-tighter transition-all ${activeTab === t ? 'text-pink-500 border-b-4 border-pink-500' : 'text-gray-300'}`}
+                                >
+                                    {t === 'food' ? 'NUTRITION' : t.replace('day', 'DAY ').toUpperCase()}
+                                </button>
+                            ))}
+                        </nav>
+                    </div>
+
+                    <main className="p-4">
+                        {activeTab === 'food' ? (
+                            <div className="bg-green-50 p-6 rounded-3xl border-2 border-green-100 shadow-inner">
+                                <h2 className="text-xl font-black text-green-800 mb-6 uppercase tracking-tighter italic">Nutrition Target</h2>
+                                <div className="space-y-4">
+                                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-green-200">
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-bold text-green-700">Daily Protein</span>
+                                            <span className="font-black text-xl text-green-800">150g</span>
+                                        </div>
+                                        <div className="w-full bg-green-100 h-2 mt-2 rounded-full overflow-hidden">
+                                            <div className="bg-green-500 h-full w-3/4"></div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-green-200 flex justify-between">
+                                        <span className="font-bold text-green-700">Water Intake</span>
+                                        <span className="font-black text-green-800">3.5 Liters</span>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-green-200">
+                                        <span className="block font-bold text-green-700 mb-1">ACL Recovery Bundle</span>
+                                        <p className="text-xs text-green-600 font-medium leading-relaxed">Collagen Peptides + Vit C (30m pre-workout) + Omega-3s for inflammation.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <h2 className="text-xs font-black text-gray-300 uppercase mb-4 tracking-[0.2em]">{workoutStructure[activeTab].name}</h2>
+                                {workoutStructure[activeTab].exercises.map((ex, i) => renderExercise(ex, i))}
+                            </div>
+                        )}
+                    </main>
+
+                    <footer className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md">
+                        <div className="bg-gray-900/90 backdrop-blur-xl p-2 rounded-3xl border border-white/10 shadow-2xl flex gap-2">
+                             <button 
+                                onClick={() => window.print()}
+                                className="flex-1 bg-white text-black py-4 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all"
+                            >
+                                Get PDF
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    const csv = "Date,Exercise,Weight,Reps\n" + Object.entries(workoutData).map(([k,v]) => v.map(l => `${l.date},${k},${l.weight},${l.reps}`).join('\n')).join('\n');
+                                    const blob = new Blob([csv], { type: 'text/csv' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `nina_fitness_data.csv`;
+                                    a.click();
+                                }}
+                                className="flex-1 bg-pink-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all"
+                            >
+                                Export CSV
+                            </button>
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<WorkoutApp />);
+    </script>
+</body>
+</html>
